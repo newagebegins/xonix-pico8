@@ -5,15 +5,43 @@ __lua__
 t_land=1
 t_sea=2
 t_player=3
+t_enemy=4
 
 tiles={}
 colors={}
 player={}
+enemies={}
+
+function make_enemies()
+ add(enemies, {
+  y=4,
+  x=4,
+  dx=1,
+  dy=-1,
+ })
+ add(enemies, {
+  y=20,
+  x=40,
+  dx=-1,
+  dy=-1,
+ })
+ add(enemies, {
+  y=25,
+  x=58,
+  dx=1,
+  dy=1,
+ })
+
+ for e in all(enemies) do
+  tiles[e.y][e.x]=t_enemy
+ end
+end
 
 function _init()
  colors[t_land]=1
  colors[t_sea]=0
  colors[t_player]=11
+ colors[t_enemy]=8
 
  for r=0,63 do
   for c=0,63 do
@@ -38,6 +66,49 @@ function _init()
  p.dy=0
 
  tiles[p.y][p.x]=t_player
+ 
+ make_enemies()
+end
+
+function is_occupied(x)
+ return x==nil or x==t_land
+end
+
+function move_enemy_h(e)
+ local m=tiles
+ local fwd=m[e.y][e.x+e.dx]
+ local bwd=m[e.y][e.x-e.dx]
+ if is_occupied(fwd) then
+  if is_occupied(bwd) then
+   return
+  else
+   e.dx*=-1
+  end
+ end
+ m[e.y][e.x]=t_sea
+ e.x+=e.dx
+ m[e.y][e.x]=t_enemy
+end
+
+function move_enemy_v(e)
+ local m=tiles
+ local fwd=m[e.y+e.dy][e.x]
+ local bwd=m[e.y-e.dy][e.x]
+ if is_occupied(fwd) then
+  if is_occupied(bwd) then
+   return
+  else
+   e.dy*=-1
+  end
+ end
+ m[e.y][e.x]=t_sea
+ e.y+=e.dy
+ m[e.y][e.x]=t_enemy
+end
+
+function move_enemy(e)
+ move_enemy_h(e)
+ move_enemy_v(e)
 end
 
 function _update()
@@ -70,6 +141,8 @@ function _update()
   p.y=ny
   tiles[p.y][p.x]=t_player
  end
+ 
+ foreach(enemies, move_enemy)
 end
 
 function _draw()
