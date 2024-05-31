@@ -74,41 +74,31 @@ function is_occupied(x)
  return x==nil or x==t_land
 end
 
-function move_enemy_h(e)
+function move_enemy_cardinal(e,d)
  local m=tiles
- local fwd=m[e.y][e.x+e.dx]
- local bwd=m[e.y][e.x-e.dx]
+ local fwd=m[e.y+d.y][e.x+d.x]
+ local bwd=m[e.y-d.y][e.x-d.x]
  if is_occupied(fwd) then
   if is_occupied(bwd) then
    return
   else
-   e.dx*=-1
+   d.x*=-1
+   d.y*=-1
   end
  end
  m[e.y][e.x]=t_sea
- e.x+=e.dx
- m[e.y][e.x]=t_enemy
-end
-
-function move_enemy_v(e)
- local m=tiles
- local fwd=m[e.y+e.dy][e.x]
- local bwd=m[e.y-e.dy][e.x]
- if is_occupied(fwd) then
-  if is_occupied(bwd) then
-   return
-  else
-   e.dy*=-1
-  end
- end
- m[e.y][e.x]=t_sea
- e.y+=e.dy
+ e.x+=d.x
+ e.y+=d.y
  m[e.y][e.x]=t_enemy
 end
 
 function move_enemy(e)
- move_enemy_h(e)
- move_enemy_v(e)
+ local dh={x=e.dx,y=0}
+ local dv={x=0,y=e.dy}
+ move_enemy_cardinal(e,dh)
+ move_enemy_cardinal(e,dv)
+ e.dx=dh.x
+ e.dy=dv.y
 end
 
 function _update()
