@@ -13,6 +13,14 @@ colors={}
 player={}
 enemies={}
 
+function set_colors()
+ colors[t_land]=1
+ colors[t_sea]=0
+ colors[t_player]=11
+ colors[t_enemy_s]=8
+ colors[t_enemy_l]=9
+end
+
 function make_sea_enemy()
  local m=tiles
  local e={}
@@ -50,11 +58,7 @@ function make_enemies()
 end
 
 function _init()
- colors[t_land]=1
- colors[t_sea]=0
- colors[t_player]=11
- colors[t_enemy_s]=8
- colors[t_enemy_l]=9
+ set_colors()
 
  for r=0,63 do
   for c=0,63 do
