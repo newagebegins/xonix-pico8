@@ -12,28 +12,26 @@ colors={}
 player={}
 enemies={}
 
-function make_enemies()
- add(enemies, {
-  y=4,
-  x=4,
-  dx=1,
-  dy=-1,
- })
- add(enemies, {
-  y=20,
-  x=40,
-  dx=-1,
-  dy=-1,
- })
- add(enemies, {
-  y=25,
-  x=58,
-  dx=1,
-  dy=1,
- })
+function make_enemy()
+ local m=tiles
+ local e={}
+ while true do
+  e.x=2+flr(rnd(64-2*2))
+  e.y=2+flr(rnd(64-2*2))
+  if m[e.y][e.x]!=t_enemy then
+   break
+  end
+ end
+ e.dx=rnd({-1,1})
+ e.dy=rnd({-1,1})
+ add(enemies, e)
+ assert(m[e.y][e.x]==t_sea)
+ m[e.y][e.x]=t_enemy
+end
 
- for e in all(enemies) do
-  tiles[e.y][e.x]=t_enemy
+function make_enemies()
+ for i=1,3 do
+  make_enemy()
  end
 end
 
