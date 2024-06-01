@@ -5,41 +5,56 @@ __lua__
 t_land=1
 t_sea=2
 t_player=3
-t_enemy=4
+t_enemy_s=4 -- sea enemy
+t_enemy_l=5 -- land enemy
 
 tiles={}
 colors={}
 player={}
 enemies={}
 
-function make_enemy()
+function make_sea_enemy()
  local m=tiles
  local e={}
  while true do
   e.x=2+flr(rnd(64-2*2))
   e.y=2+flr(rnd(64-2*2))
-  if m[e.y][e.x]!=t_enemy then
+  if m[e.y][e.x]==t_sea then
    break
   end
  end
  e.dx=rnd({-1,1})
  e.dy=rnd({-1,1})
- add(enemies, e)
- assert(m[e.y][e.x]==t_sea)
- m[e.y][e.x]=t_enemy
+ e.bg=t_sea
+ add(enemies,e)
+ m[e.y][e.x]=t_enemy_s
+end
+
+function make_land_enemy()
+ local e={}
+ e.x=31
+ e.y=63
+ e.dx=rnd({-1,1})
+ e.dy=rnd({-1,1})
+ e.bg=t_land
+ add(enemies,e)
+ assert(tiles[e.y][e.x]==t_land)
+ tiles[e.y][e.x]=t_enemy_l
 end
 
 function make_enemies()
  for i=1,3 do
-  make_enemy()
+  make_sea_enemy()
  end
+ make_land_enemy() 
 end
 
 function _init()
  colors[t_land]=1
  colors[t_sea]=0
  colors[t_player]=11
- colors[t_enemy]=8
+ colors[t_enemy_s]=8
+ colors[t_enemy_l]=9
 
  for r=0,63 do
   for c=0,63 do
@@ -68,26 +83,23 @@ function _init()
  make_enemies()
 end
 
-function is_occupied(x)
- return x==nil or x==t_land
-end
-
 function move_enemy_cardinal(e,d)
  local m=tiles
- local fwd=m[e.y+d.y][e.x+d.x]
- local bwd=m[e.y-d.y][e.x-d.x]
- if is_occupied(fwd) then
-  if is_occupied(bwd) then
+ local fwd=m[e.y+d.y] and m[e.y+d.y][e.x+d.x]
+ local bwd=m[e.y-d.y] and m[e.y-d.y][e.x-d.x]
+ if fwd!=e.bg then
+  if bwd!=e.bg then
    return
   else
    d.x*=-1
    d.y*=-1
   end
  end
- m[e.y][e.x]=t_sea
+ local tmp=m[e.y][e.x]
+ m[e.y][e.x]=e.bg
  e.x+=d.x
  e.y+=d.y
- m[e.y][e.x]=t_enemy
+ m[e.y][e.x]=tmp
 end
 
 function move_enemy(e)
