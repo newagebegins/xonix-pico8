@@ -1,123 +1,99 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
--- tile types
-t_land=1
-t_sea=2
-t_player=3
-t_enemy_s=4 -- sea enemy
-t_enemy_l=5 -- land enemy
+-- map
+m={}
+m_lnd=1
+m_sea=2
+m_plr=3 -- player
+m_ens=4 -- sea enemy
+m_enl=5 -- land enemy
+m_trl=6 -- player's sea trail
 
-tiles={}
-colors={}
-player={}
-enemies={}
+-- player
+p={
+ x=31,
+ y=0,
+ dx=0,
+ dy=-1,
+ in_sea=false,
+ -- sea trail start coords
+ tx=0,
+ ty=0,
+}
 
-function set_colors()
- colors[t_land]=1
- colors[t_sea]=0
- colors[t_player]=11
- colors[t_enemy_s]=8
- colors[t_enemy_l]=9
+colors={
+ [m_lnd]=1,
+ [m_sea]=0,
+ [m_plr]=11,
+ [m_ens]=8,
+ [m_enl]=9,
+ [m_trl]=3,
+}
+
+-- enemies
+ens={}
+enl={}
+
+function init_map()
+ for y=0,63 do
+  for x=0,63 do
+   m[y]=m[y] or {}
+   local is_land=
+    y==0 or y==1 or
+    y==62 or y==63 or
+    x==0 or x==1 or
+    x==62 or x==63
+   if is_land then
+    m[y][x]=m_lnd
+   else
+    m[y][x]=m_sea
+   end
+  end
+ end
+
+ m[p.y][p.x]=m_plr
 end
 
-function make_sea_enemy()
- local m=tiles
+function make_ens()
  local e={}
  while true do
   e.x=2+flr(rnd(64-2*2))
   e.y=2+flr(rnd(64-2*2))
-  if m[e.y][e.x]==t_sea then
+  if m[e.y][e.x]==m_sea then
    break
   end
  end
  e.dx=rnd({-1,1})
  e.dy=rnd({-1,1})
- e.bg=t_sea
- add(enemies,e)
- m[e.y][e.x]=t_enemy_s
+ add(ens,e)
+ m[e.y][e.x]=m_ens
 end
 
-function make_land_enemy()
+function make_enl()
  local e={}
  e.x=31
  e.y=63
  e.dx=rnd({-1,1})
  e.dy=rnd({-1,1})
- e.bg=t_land
- add(enemies,e)
- assert(tiles[e.y][e.x]==t_land)
- tiles[e.y][e.x]=t_enemy_l
+ add(enl,e)
+ m[e.y][e.x]=m_enl
 end
 
-function make_enemies()
+function init_enemies()
  for i=1,3 do
-  make_sea_enemy()
+  make_ens()
  end
- make_land_enemy() 
+ make_enl() 
 end
 
 function _init()
- set_colors()
-
- for r=0,63 do
-  for c=0,63 do
-   tiles[r] = tiles[r] or {}
-   local is_land=
-    r==0 or r==1 or
-    r==62 or r==63 or
-    c==0 or c==1 or
-    c==62 or c==63
-   if is_land then
-    tiles[r][c]=t_land
-   else
-    tiles[r][c]=t_sea
-   end
-  end
- end
- 
- local p=player
- p.y=0
- p.x=31
- p.dx=0
- p.dy=0
-
- tiles[p.y][p.x]=t_player
- 
- make_enemies()
+ init_map()
+ init_enemies()
 end
 
-function move_enemy_cardinal(e,d)
- local m=tiles
- local fwd=m[e.y+d.y] and m[e.y+d.y][e.x+d.x]
- local bwd=m[e.y-d.y] and m[e.y-d.y][e.x-d.x]
- if fwd!=e.bg then
-  if bwd!=e.bg then
-   return
-  else
-   d.x*=-1
-   d.y*=-1
-  end
- end
- local tmp=m[e.y][e.x]
- m[e.y][e.x]=e.bg
- e.x+=d.x
- e.y+=d.y
- m[e.y][e.x]=tmp
-end
-
-function move_enemy(e)
- local dh={x=e.dx,y=0}
- local dv={x=0,y=e.dy}
- move_enemy_cardinal(e,dh)
- move_enemy_cardinal(e,dv)
- e.dx=dh.x
- e.dy=dv.y
-end
-
-function _update()
- local p=player
-
+-->8
+function handle_input()
  if btn(➡️) then
   p.dx=1
   p.dy=0
@@ -134,28 +110,169 @@ function _update()
   p.dx=0
   p.dy=1
  end
-
- local nx=p.x+p.dx
- local ny=p.y+p.dy
- if 0<=nx and nx<=63 and
-    0<=ny and ny<=63 and
-    tiles[ny][nx]==t_land then
-  tiles[p.y][p.x]=t_land
-  p.x=nx
-  p.y=ny
-  tiles[p.y][p.x]=t_player
- end
- 
- foreach(enemies, move_enemy)
 end
 
+function hit_player()
+ run()
+end
+
+function move_player()
+ local bg=p.in_sea and m_trl
+  or m_lnd
+ m[p.y][p.x]=bg
+ p.x+=p.dx
+ p.y+=p.dy
+ m[p.y][p.x]=m_plr
+end
+
+function expand_land()
+ -- todo
+end
+
+function update_player()
+ local nx=p.x+p.dx
+ local ny=p.y+p.dy
+ local to=m[ny] and m[ny][nx]
+ if p.in_sea then
+  if to==m_lnd then
+   move_player()
+   p.in_sea=false
+   expand_land()
+  elseif to==m_sea then
+   move_player()
+  elseif to==m_ens or
+         to==m_enl or
+         to==m_trl then
+   hit_player()
+  else
+   assert(false)
+  end
+ else
+  if to==nil then
+   -- don't move
+  elseif to==m_lnd then
+   move_player()
+  elseif to==m_sea then
+   move_player()
+   p.in_sea=true
+   p.tx=p.x
+   p.ty=p.y
+  elseif to==m_ens or
+         to==m_enl then
+   hit_player()
+  else
+   assert(false)
+  end
+ end
+end
+
+function update_enl_h(e)
+ local nx=e.x+e.dx
+ local to=m[e.y] and m[e.y][nx]
+ if to==nil or
+    to==m_sea or
+    to==m_ens or
+    to==m_enl or
+    to==m_trl then
+  e.dx*=-1
+ elseif to==m_lnd then
+  m[e.y][e.x]=m_lnd
+  e.x=nx
+  m[e.y][e.x]=m_enl
+ elseif to==m_plr then
+  hit_player()
+ else
+  assert(false)
+ end
+end
+
+function update_enl_v(e)
+ local ny=e.y+e.dy
+ local to=m[ny] and m[ny][e.x]
+ if to==nil or
+    to==m_sea or
+    to==m_ens or
+    to==m_enl or
+    to==m_trl then
+  e.dy*=-1
+ elseif to==m_lnd then
+  m[e.y][e.x]=m_lnd
+  e.y=ny
+  m[e.y][e.x]=m_enl
+ elseif to==m_plr then
+  hit_player()
+ else
+  assert(false)
+ end
+end
+
+function update_enl(e)
+ update_enl_h(e)
+ update_enl_v(e)
+end
+
+function update_ens_h(e)
+ local nx=e.x+e.dx
+ local to=m[e.y] and m[e.y][nx]
+ if to==m_lnd or
+    to==m_enl or
+    to==m_ens then
+  e.dx*=-1
+ elseif to==m_sea then
+  m[e.y][e.x]=m_sea
+  e.x=nx
+  m[e.y][e.x]=m_ens
+ elseif to==m_plr or
+        to==m_trl then
+  hit_player()
+ else
+  assert(false)
+ end
+end
+
+function update_ens_v(e)
+ local ny=e.y+e.dy
+ local to=m[ny] and m[ny][e.x]
+ if to==m_lnd or
+    to==m_ens or
+    to==m_enl then
+  e.dy*=-1
+ elseif to==m_sea then
+  m[e.y][e.x]=m_sea
+  e.y=ny
+  m[e.y][e.x]=m_ens
+ elseif to==m_plr or
+        to==m_trl then
+  hit_player()
+ else
+  assert(false)
+ end
+end
+
+function update_ens(e)
+ update_ens_h(e)
+ update_ens_v(e)
+end
+
+function update_enemies()
+ foreach(enl, update_enl)
+ foreach(ens, update_ens)
+end
+
+function _update()
+ handle_input()
+ update_player()
+ update_enemies()
+end
+
+-->8
 function _draw()
  cls()
- for r=0,63 do
-  for c=0,63 do
-   rectfill(c*2,r*2,
-            c*2+1,r*2+1,
-            colors[tiles[r][c]])
+ for y=0,63 do
+  for x=0,63 do
+   rectfill(x*2,y*2,
+            x*2+1,y*2+1,
+            colors[m[y][x]])
   end
  end
 end
