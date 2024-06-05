@@ -16,13 +16,8 @@ mh=61 -- map height
 full=0 -- land filled percent
 
 -- player
-p={
- x=flr(mw/2)-1,
- y=0,
- dx=0,
- dy=-1,
- in_sea=false,
-}
+p={}
+hit=false
 
 colors={
  [m_lnd]=1,
@@ -64,8 +59,22 @@ function init_map()
    end
   end
  end
+end
+
+function init_player()
+ p.x=flr(mw/2)-1
+ p.y=0
+ p.dx=0
+ p.dy=-1
+ p.in_sea=false
 
  m[p.y][p.x]=m_plr
+end
+
+function remove_player()
+ local bg=p.in_sea
+          and m_sea or m_lnd
+ m[p.y][p.x]=bg
 end
 
 function make_ens()
@@ -93,6 +102,13 @@ function make_enl()
  m[e.y][e.x]=m_enl
 end
 
+function remove_enl()
+ for e in all(enl) do
+  m[e.y][e.x]=m_lnd
+ end
+ enl={}
+end
+
 function init_enemies()
  for i=1,3 do
   make_ens()
@@ -102,6 +118,7 @@ end
 
 function _init()
  init_map()
+ init_player()
  init_enemies()
 end
 
@@ -126,7 +143,18 @@ function handle_input()
 end
 
 function hit_player()
- run()
+ hit=true
+end
+
+function process_hit()
+ -- reset player
+ remove_player()
+ init_player()
+ -- reset land enemies
+ remove_enl()
+ make_enl()
+ -- remove the trail
+ remove_trl()
 end
 
 function move_player()
@@ -185,14 +213,22 @@ function try_fill(v)
  return false
 end
 
-function fill_trl()
- for y=0,mh-1 do
-  for x=0,mw-1 do
+function fill_trl_(f)
+ for y=2,mh-1-2 do
+  for x=2,mw-1-2 do
    if m[y][x]==m_trl then
-    m[y][x]=m_lnd
+    m[y][x]=f
    end
   end
  end
+end
+
+function fill_trl()
+ fill_trl_(m_lnd)
+end
+
+function remove_trl()
+ fill_trl_(m_sea)
 end
 
 function expand_land(v)
@@ -258,6 +294,7 @@ function update_player()
 end
 
 function update_enl_h(e)
+ if (hit) return
  local nx=e.x+e.dx
  local to=m[e.y] and m[e.y][nx]
  if to==nil or
@@ -278,6 +315,7 @@ function update_enl_h(e)
 end
 
 function update_enl_v(e)
+ if (hit) return
  local ny=e.y+e.dy
  local to=m[ny] and m[ny][e.x]
  if to==nil or
@@ -303,6 +341,7 @@ function update_enl(e)
 end
 
 function update_ens_h(e)
+ if (hit) return
  local nx=e.x+e.dx
  local to=m[e.y] and m[e.y][nx]
  if to==m_lnd or
@@ -322,6 +361,7 @@ function update_ens_h(e)
 end
 
 function update_ens_v(e)
+ if (hit) return
  local ny=e.y+e.dy
  local to=m[ny] and m[ny][e.x]
  if to==m_lnd or
@@ -351,6 +391,10 @@ function update_enemies()
 end
 
 function _update()
+ if hit then
+  process_hit()
+  hit=false
+ end
  handle_input()
  update_player()
  update_enemies()
