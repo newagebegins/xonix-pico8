@@ -10,9 +10,12 @@ m_ens=4 -- sea enemy
 m_enl=5 -- land enemy
 m_trl=6 -- player's sea trail
 
+mw=64 -- map width
+mh=61 -- map height
+
 -- player
 p={
- x=31,
+ x=flr(mw/2)-1,
  y=0,
  dx=0,
  dy=-1,
@@ -44,14 +47,14 @@ function v_add(v,w)
 end
 
 function init_map()
- for y=0,63 do
-  for x=0,63 do
+ for y=0,mh-1 do
+  for x=0,mw-1 do
    m[y]=m[y] or {}
    local is_land=
     y==0 or y==1 or
-    y==62 or y==63 or
+    y==mh-2 or y==mh-1 or
     x==0 or x==1 or
-    x==62 or x==63
+    x==mw-2 or x==mw-1
    if is_land then
     m[y][x]=m_lnd
    else
@@ -66,8 +69,8 @@ end
 function make_ens()
  local e={}
  while true do
-  e.x=2+flr(rnd(64-2*2))
-  e.y=2+flr(rnd(64-2*2))
+  e.x=2+flr(rnd(mw-2*2))
+  e.y=2+flr(rnd(mh-2*2))
   if m[e.y][e.x]==m_sea then
    break
   end
@@ -80,8 +83,8 @@ end
 
 function make_enl()
  local e={}
- e.x=31
- e.y=63
+ e.x=flr(mw/2)-1
+ e.y=mh-1
  e.dx=rnd({-1,1})
  e.dy=rnd({-1,1})
  add(enl,e)
@@ -135,8 +138,8 @@ end
 
 function copy_map()
  local n={}
- for y=0,63 do
-  for x=0,63 do
+ for y=0,mh-1 do
+  for x=0,mw-1 do
    n[y]=n[y] or {}
    n[y][x]=m[y][x]
   end
@@ -181,8 +184,8 @@ function try_fill(v)
 end
 
 function fill_trl()
- for y=0,63 do
-  for x=0,63 do
+ for y=0,mh-1 do
+  for x=0,mw-1 do
    if m[y][x]==m_trl then
     m[y][x]=m_lnd
    end
@@ -340,13 +343,15 @@ end
 -->8
 function _draw()
  cls()
- for y=0,63 do
-  for x=0,63 do
+ for y=0,mh-1 do
+  for x=0,mw-1 do
    rectfill(x*2,y*2,
             x*2+1,y*2+1,
             colors[m[y][x]])
   end
  end
+ color(7)
+ print("full: 0%",0,128-5)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
