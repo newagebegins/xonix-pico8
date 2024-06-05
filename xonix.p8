@@ -17,9 +17,7 @@ p={
  dx=0,
  dy=-1,
  in_sea=false,
- -- sea trail start coords
- tx=0,
- ty=0,
+ trl_beg={x=0,y=0}
 }
 
 colors={
@@ -34,6 +32,37 @@ colors={
 -- enemies
 ens={}
 enl={}
+
+dirs={
+ {x=0,y=-1},
+ {x=1,y=0},
+ {x=0,y=1},
+ {x=-1,y=0}, 
+}
+
+function v_add(v,w)
+ return {x=v.x+w.x,y=v.y+w.y}
+end
+
+function v_sub(v,w)
+ return {x=v.x-w.x,y=v.y-w.y}
+end
+
+function v_eq(v,w)
+ return v.x==w.x and v.y==w.y
+end
+
+function v_perp(v)
+ return {x=-v.y,y=v.x}
+end
+
+function v_perp_r(v)
+ return {x=v.y,y=-v.x}
+end
+
+function get(v)
+ return m[v.y][v.x]
+end
 
 function init_map()
  for y=0,63 do
@@ -125,8 +154,103 @@ function move_player()
  m[p.y][p.x]=m_plr
 end
 
+function get_trl_nxt(pre,cur)
+ for dir in all(dirs) do
+  local nxt=v_add(cur,dir)
+  if ((not pre) or (not v_eq(nxt,pre)))
+     and get(nxt)==m_trl then
+   return nxt
+  end
+ end
+ return nil
+end
+
+function copy_map()
+ local n={}
+ for y=0,63 do
+  for x=0,63 do
+   n[y]=n[y] or {}
+   n[y][x]=m[y][x]
+  end
+ end
+ return n
+end
+
+function try_fill_(n,v)
+ assert(n[v.y][v.x]==m_sea)
+ n[v.y][v.x]=m_lnd
+ for dir in all(dirs) do
+  local w=v_add(v,dir)
+  local x=n[w.y][w.x]
+  if x==m_lnd then
+   -- do nothing
+  elseif x==m_sea then
+   if not try_fill_(n,w) then
+    return false
+   end
+  elseif x==m_plr then
+   -- do nothing
+  elseif x==m_ens then
+   return false
+  elseif x==m_enl then
+   -- do nothing
+  elseif x==m_trl then
+   -- do nothing
+  else
+   assert(false)
+  end
+ end
+ return true
+end
+
+function try_fill(v)
+ local n=copy_map()
+ if try_fill_(n,v) then
+  m=n
+  return true
+ end
+ return false
+end
+
+function fill_trl()
+ for y=0,63 do
+  for x=0,63 do
+   if m[y][x]==m_trl then
+    m[y][x]=m_lnd
+   end
+  end
+ end
+end
+
 function expand_land()
- -- todo
+ local pre=nil
+ local cur=p.trl_beg
+ local lft=nil
+ local rgt=nil
+ while true do
+	 local nxt=get_trl_nxt(pre,cur)
+	 if not nxt then
+	  break
+	 end
+	 local dir=v_sub(nxt,cur)
+	 local ldir=v_perp(dir)
+	 local rdir=v_perp_r(dir)
+	 local l=v_add(cur,ldir)
+	 local r=v_add(cur,rdir)
+	 if get(l)==m_sea and
+	    not lft then
+	  lft=l
+	 end
+	 if get(r)==m_sea and
+	    not rgt then
+	  rgt=r
+	 end
+  pre=cur
+  cur=nxt
+ end
+ _=(lft and try_fill(lft)) or
+   (rgt and try_fill(rgt))
+ fill_trl()
 end
 
 function update_player()
@@ -153,10 +277,9 @@ function update_player()
   elseif to==m_lnd then
    move_player()
   elseif to==m_sea then
+   p.trl_beg={x=p.x,y=p.y}
    move_player()
    p.in_sea=true
-   p.tx=p.x
-   p.ty=p.y
   elseif to==m_ens or
          to==m_enl then
    hit_player()
