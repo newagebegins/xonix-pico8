@@ -13,6 +13,8 @@ m_trl=6 -- player's sea trail
 mw=64 -- map width
 mh=61 -- map height
 
+full=0 -- land filled percent
+
 -- player
 p={
  x=flr(mw/2)-1,
@@ -205,6 +207,19 @@ function expand_land(v)
  fill_trl()
 end
 
+function calc_full()
+ local total=(mw-4)*(mh-4)
+ local land=0
+ for y=2,mh-3 do
+  for x=2,mw-3 do
+   if m[y][x]==m_lnd then
+    land+=1
+   end
+  end
+ end
+ full=flr((land/total)*100)
+end
+
 function update_player()
  local nx=p.x+p.dx
  local ny=p.y+p.dy
@@ -215,6 +230,7 @@ function update_player()
    move_player()
    p.in_sea=false
    expand_land(trl_end)
+   calc_full()
   elseif to==m_sea then
    move_player()
   elseif to==m_ens or
@@ -351,7 +367,9 @@ function _draw()
   end
  end
  color(7)
- print("full: 0%",0,128-5)
+ print("full: "..full.."%",
+       0,
+       128-5)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
