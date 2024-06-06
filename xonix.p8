@@ -13,6 +13,7 @@ m_trl=6 -- player's sea trail
 mw=64 -- map width
 mh=61 -- map height
 
+score=0
 full=0 -- land filled percent
 
 -- player
@@ -231,7 +232,23 @@ function remove_trl()
  fill_trl_(m_sea)
 end
 
+function get_lnd_count()
+ local c=0
+ for y=2,mh-1-2 do
+  for x=2,mw-1-2 do
+   local k=m[y][x]
+   if k==m_lnd or
+      k==m_enl or
+      k==m_plr then
+    c+=1
+   end
+  end
+ end
+ return c
+end
+
 function expand_land(v)
+ local n1=get_lnd_count()
  for d in all(dirs) do
   local w=v_add(v,d)
   if m[w.y][w.x]==m_sea then
@@ -241,6 +258,8 @@ function expand_land(v)
   end
  end
  fill_trl()
+ local n2=get_lnd_count()
+ score+=(n2-n1)*10
 end
 
 function calc_full()
@@ -411,7 +430,8 @@ function _draw()
   end
  end
  color(7)
- print("full: "..full.."%",
+ print("score:"..score.." "..
+       "full:"..full.."%",
        0,
        128-5)
 end
