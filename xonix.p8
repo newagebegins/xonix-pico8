@@ -41,6 +41,8 @@ dirs={
  {x=-1,y=0}, 
 }
 
+is_game_over=false
+
 function v_add(v,w)
  return {x=v.x+w.x,y=v.y+w.y}
 end
@@ -156,13 +158,7 @@ function process_hit()
  remove_enl()
  make_enl()
  -- remove the trail
- remove_trl()
- 
- lives-=1
- 
- if lives==0 then
-  run()
- end
+ remove_trl() 
 end
 
 function move_player()
@@ -416,19 +412,46 @@ function update_enemies()
  foreach(ens, update_ens)
 end
 
-function _update()
+function update_game_over()
+ if btn(❎) then
+  run()
+ end
+end
+
+function update_game()
  if hit then
   process_hit()
-  hit=false
+	
+	 lives-=1 
+	 if lives==0 then
+	  is_game_over=true
+	 else
+   hit=false
+	 end
  end
+
  handle_input()
  update_player()
  update_enemies()
 end
 
+function _update()
+ if is_game_over then
+  update_game_over()
+ else
+  update_game()
+ end
+end
+
 -->8
-function _draw()
- cls()
+function draw_game_over()
+ print("score:"..score.."\n\n"..
+       "press ❎ to restart",
+       0,
+       10)
+end
+
+function draw_game()
  for y=0,mh-1 do
   for x=0,mw-1 do
    rectfill(x*2,y*2,
@@ -442,6 +465,15 @@ function _draw()
        "full:"..full.."%",
        0,
        128-5)
+end
+
+function _draw()
+ cls()
+ if is_game_over then
+  draw_game_over()
+ else
+  draw_game()
+ end
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
