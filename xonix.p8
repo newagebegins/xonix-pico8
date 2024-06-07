@@ -34,6 +34,8 @@ colors={
 ens={}
 enl={}
 
+num_ens=3
+
 dirs={
  {x=0,y=-1},
  {x=1,y=0},
@@ -114,7 +116,9 @@ function remove_enl()
 end
 
 function init_enemies()
- for i=1,3 do
+ ens={}
+ enl={}
+ for i=1,num_ens do
   make_ens()
  end
  make_enl() 
@@ -275,7 +279,7 @@ function calc_full()
    end
   end
  end
- full=flr((land/total)*100)
+ return flr((land/total)*100)
 end
 
 function update_player()
@@ -288,7 +292,7 @@ function update_player()
    move_player()
    p.in_sea=false
    expand_land(trl_end)
-   calc_full()
+   full=calc_full()
   elseif to==m_sea then
    move_player()
   elseif to==m_ens or
@@ -418,7 +422,20 @@ function update_game_over()
  end
 end
 
-function update_game()
+function go_next_level()
+ full=0
+ num_ens+=1
+
+ init_map()
+ init_player()
+ init_enemies()
+end
+
+function update_game() 
+ if full>=75 then
+  go_next_level()
+ end
+
  if hit then
   process_hit()
 	
