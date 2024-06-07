@@ -15,6 +15,7 @@ mh=61 -- map height
 
 score=0
 full=0 -- land filled percent
+lives=3
 
 -- player
 p={}
@@ -156,6 +157,12 @@ function process_hit()
  make_enl()
  -- remove the trail
  remove_trl()
+ 
+ lives-=1
+ 
+ if lives==0 then
+  run()
+ end
 end
 
 function move_player()
@@ -259,7 +266,7 @@ function expand_land(v)
  end
  fill_trl()
  local n2=get_lnd_count()
- score+=(n2-n1)*10
+ score+=(n2-n1)
 end
 
 function calc_full()
@@ -431,6 +438,7 @@ function _draw()
  end
  color(7)
  print("score:"..score.." "..
+       "xn:"..lives.." "..
        "full:"..full.."%",
        0,
        128-5)
