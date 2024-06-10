@@ -45,6 +45,10 @@ dirs={
 
 is_game_over=false
 
+timer_max=89
+timer=timer_max
+timer_spd=0.075
+
 function v_add(v,w)
  return {x=v.x+w.x,y=v.y+w.y}
 end
@@ -102,6 +106,9 @@ function make_enl()
  local e={}
  e.x=flr(mw/2)-1
  e.y=mh-1
+ while m[e.y][e.x]!=m_lnd do
+  e.x+=1
+ end
  e.dx=rnd({-1,1})
  e.dy=rnd({-1,1})
  add(enl,e)
@@ -162,7 +169,9 @@ function process_hit()
  remove_enl()
  make_enl()
  -- remove the trail
- remove_trl() 
+ remove_trl()
+ 
+ timer=timer_max
 end
 
 function move_player()
@@ -416,6 +425,14 @@ function update_enemies()
  foreach(ens, update_ens)
 end
 
+function update_timer()
+ timer-=timer_spd
+ if timer < 0 then
+  timer+=timer_max
+  make_enl()
+ end
+end
+
 function update_game_over()
  if btn(❎) then
   run()
@@ -425,6 +442,7 @@ end
 function go_next_level()
  full=0
  num_ens+=1
+ timer=timer_max
 
  init_map()
  init_player()
@@ -450,6 +468,7 @@ function update_game()
  handle_input()
  update_player()
  update_enemies()
+ update_timer()
 end
 
 function _update()
@@ -479,7 +498,8 @@ function draw_game()
  color(7)
  print("score:"..score.." "..
        "xn:"..lives.." "..
-       "full:"..full.."%",
+       "full:"..full.."% "..
+       "time:"..ceil(timer),
        0,
        128-5)
 end
