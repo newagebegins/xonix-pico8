@@ -87,7 +87,7 @@ function init_player()
  p.x=flr(mw/2)-1
  p.y=0
  p.dx=0
- p.dy=-1
+ p.dy=0
  p.in_sea=false
 
  m[p.y][p.x]=m_plr
@@ -306,6 +306,9 @@ function calc_full()
 end
 
 function update_player()
+ if p.dx==0 and p.dy==0 then
+  return
+ end
  local nx=p.x+p.dx
  local ny=p.y+p.dy
  local to=m[ny] and m[ny][nx]
@@ -316,6 +319,8 @@ function update_player()
    p.in_sea=false
    expand_land(trl_end)
    full=calc_full()
+   p.dx=0
+   p.dy=0
   elseif to==m_sea then
    move_player()
   elseif to==m_ens or
